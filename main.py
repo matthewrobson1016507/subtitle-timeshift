@@ -1,5 +1,6 @@
 import sys
 from lineswrapper import LinesWrapper
+from subtitle import Subtitle
 from subtitleparser import SubtitleParser
 from subtitlewriter import SubtitleWriter
 
@@ -14,13 +15,34 @@ def writeFile(lines: list[str]):
     fileHandle.writelines(list(map(lambda x: x + '\n', lines)))
     fileHandle.close()
 
+def timeShiftSubtitle(subtitle: Subtitle, nSeconds: int):
+    subtitle.timestamp.shiftBy(nSeconds)
+    return subtitle
+
+class Args:
+    def __init__(self, file: str, nSeconds: int):
+        self.file = file
+        self.nSeconds = nSeconds
+
+    def parse(argVector: list[str]):
+        if len(argVector) != 3:
+            return None
+        return Args(argVector[1], int(argVector[2]))
+
 def main():
-    subtitleFilePath = sys.argv[1]
-    lines = readFile(subtitleFilePath)
+    args = Args.parse(sys.argv)
+    if not args:
+        print("Wrong number of arguments")
+        return
+    
+    lines = readFile(args.file)
     wrapper = LinesWrapper(lines)
     parser = SubtitleParser()
     subtitleList = parser.parseAllSubtitles(wrapper)
-    writeFile( SubtitleWriter().writeAllSubtitles(subtitleList) )
+
+    shiftedSubs = list(map(lambda x: timeShiftSubtitle(x, args.nSeconds), subtitleList ))
+
+    writeFile( SubtitleWriter().writeAllSubtitles(shiftedSubs) )
     
 if __name__ == '__main__':
     main()
