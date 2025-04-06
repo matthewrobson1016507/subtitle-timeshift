@@ -1,8 +1,8 @@
-import sys
 from lineswrapper import LinesWrapper
 from subtitle import Subtitle
 from subtitleparser import SubtitleParser
 from subtitlewriter import SubtitleWriter
+from argparse import ArgumentParser
 
 def readFile(filepath: str):
     filehandle = open(filepath, 'r', encoding='utf-8-sig')
@@ -19,23 +19,25 @@ def timeShiftSubtitle(subtitle: Subtitle, nSeconds: int):
     subtitle.timestamp.shiftBy(nSeconds)
     return subtitle
 
-class Args:
-    def __init__(self, file: str, nSeconds: int):
-        self.file = file
-        self.nSeconds = nSeconds
+parser = ArgumentParser(
+    prog='subtitle-timeshift',
+    description='Command line tool to shift timestamps of the subtitles in a subtitle file by a fixed time shift'
+)
 
-    def parse(argVector: list[str]):
-        if len(argVector) != 3:
-            return None
-        return Args(argVector[1], int(argVector[2]))
+parser.add_argument(
+    'subtitleFile', 
+    help='Path to the subtitle file to be read',
+    type=str
+)
 
-def main():
-    args = Args.parse(sys.argv)
-    if not args:
-        print("Wrong number of arguments")
-        return
-    
-    lines = readFile(args.file)
+parser.add_argument(
+    'nSeconds', 
+    help='The number of seconds to shift the subtitle timestamps by, enter a negative value to shift them earlier',
+    type=int
+)
+
+def main(args):    
+    lines = readFile(args.subtitleFile)
     wrapper = LinesWrapper(lines)
     parser = SubtitleParser()
     subtitleList = parser.parseAllSubtitles(wrapper)
@@ -45,4 +47,4 @@ def main():
     writeFile( SubtitleWriter().writeAllSubtitles(shiftedSubs) )
     
 if __name__ == '__main__':
-    main()
+    main( parser.parse_args() )
